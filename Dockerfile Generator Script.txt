@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo "Generate your Custom Dockerfile!"
+
+# Ask for Dockerfile name
+read -p "Enter the name for your Dockerfile (e.g., MyDockerfile): " DOCKERFILE_NAME
+
+# Ensure the file has no extension or .Dockerfile
+if [[ "$DOCKERFILE_NAME" != *Dockerfile ]]; then
+  DOCKERFILE_NAME="${DOCKERFILE_NAME}.Dockerfile"
+fi
+
+read -p "Enter base image (e.g., ubuntu, python:3.9-slim): " BASE_IMAGE
+read -p "Enter maintainer name/email: " MAINTAINER
+read -p "Enter packages to install (space-separated): " PACKAGES
+read -p "Enter working directory inside container: " WORKDIR
+read -p "Enter command to run at startup: " CMD
+
+# Add ENV 
+ENV_LINES=""
+echo "Do you want to add ENV variables? (yes/no)"
+read ADD_ENV
+
+if [[ "$ADD_ENV" == "yes" ]]; then
+  while true; do
+    read -p "Enter ENV variable (key=value), or type 'done' to finish: " ENV_INPUT
+    if [[ "$ENV_INPUT" == "done" ]]; then
+      break
+    fi
+    ENV_LINES+="ENV $ENV_INPUT\n"
+  done
+fi
+
+# Create Dockerfile
+cat <<EOF > "$DOCKERFILE_NAME"
+# Generated Dockerfile
+FROM $BASE_IMAGE
+
+LABEL maintainer="$MAINTAINER"
+
+RUN apt-get update && apt-get install -y $PACKAGES && apt-get clean
+
+$ENV_LINES
+WORKDIR $WORKDIR
+
+COPY . $WORKDIR
+
+CMD ["/bin/sh", "-c", "$CMD"]
+EOF
+
+echo "Your Dockerfile '$DOCKERFILE_NAME' created successfully!"
